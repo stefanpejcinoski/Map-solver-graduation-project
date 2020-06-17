@@ -1,0 +1,12 @@
+# depslib dependency file v1.0
+1581374815 source:c:\users\stefa\documents\diplfinal\diplfinal\main.c
+	<unistd.h>
+	<fcntl.h>
+	<stdio.h>
+	<stdlib.h>
+	<stdint.h>
+	<string.h>
+	<math.h>
+	<ctype.h>
+	<stdbool.h>
+

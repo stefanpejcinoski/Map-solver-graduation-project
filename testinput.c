@@ -1,5 +1,4 @@
 
-
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <fcntl.h>
@@ -77,13 +76,13 @@ int euclideanDistance(int x1, int y1, int x2, int y2){
 }
 
 int Astar(int **map,cords **rpath, int width, int height, int startx, int starty, int endx, int endy){
-    if(map[starty][startx]!=0 || map[endy][endx]!=0){
-        printf("GRESKA\n");
-
+    if(map[starty][startx]>0 || map[endy][endx]>0){
+        printf("GRESKA");
+        
         return 0;
     }
-
-
+   
+   
     Node *heap = (Node*)calloc(width*height, sizeof(Node));
     int nodecounter=0, stepcounter=0;
     heap[nodecounter].cost=euclideanDistance(startx, starty, endx, endy);
@@ -97,12 +96,12 @@ int Astar(int **map,cords **rpath, int width, int height, int startx, int starty
        // printf("looped");
         stepcounter++;
         int curindex=getMinIndex(heap, height*width);
-
-
+       
+        
         heap[curindex].isOpen=false;
         heap[curindex].isClosed=true;
         if(heap[curindex].x==endx && heap[curindex].y==endy){
-            printf("%i, %i\n", heap[curindex].x, heap[curindex].y);
+           // printf("done");
             cords *path = (cords*)calloc(stepcounter, sizeof(cords));
             int ind=curindex, i=0;
             while(heap[ind].parentIndex>-1){
@@ -110,9 +109,9 @@ int Astar(int **map,cords **rpath, int width, int height, int startx, int starty
                 path[i].y=heap[ind].y;
                 ind=heap[ind].parentIndex;
                 i++;
-
+               
             }
-
+            
 
             *rpath=path;
             free(heap);
@@ -162,7 +161,7 @@ int Astar(int **map,cords **rpath, int width, int height, int startx, int starty
            //printf("line4");
             if(heap[curindex].y-1>0)
             {
-
+            
              if (map[heap[curindex].y-1][heap[curindex].x]==0){
                 heap[++nodecounter].x=heap[curindex].x;
                 heap[nodecounter].y=heap[curindex].y-1;
@@ -421,9 +420,7 @@ retdata->linesegcords[i].c2.y=path[i+1].y;
 for(i=1 ; i<len ; i++){
 
 retdata->angles[i-1]=(180.0+(180.0/3.14)*((atan2((double)path[i+1].y-(double)path[i].y, (double)path[i+1].x-(double)path[i].x)-atan2((double)path[i-1].y-(double)path[i].y, (double)path[i-1].x-(double)path[i].x))));
-if (retdata->angles[i-1]>=360){
-retdata->angles[i-1]-=360;
-}
+
 
 }
 return retdata;
@@ -546,7 +543,7 @@ void sendOverRS232(unsigned char *message, int port)
    tcdrain(port);
    i++;
    }
-
+   
 }
 bool sendToRobot(data *path, int len, int anglecorrection){
 int uart0_filestream = -1;
@@ -582,35 +579,22 @@ __uint8_t speed=10;
     printf("failed to set speed");
     return false;
 }
-	if(tcsetattr(uart0_filestream, TCSAFLUSH, &options) < 0) {
-    printf("failed to set config");
-    return false;
+	if(tcsetattr(uart0_filestream, TCSAFLUSH, &options) < 0) { 
+    printf("failed to set config"); 
+    return false; 
     }
    // if (ioctl(uart0_filestream, O_EXCL, NULL) < 0) {
    // printf("failed to gain exclusive access");
    // return false;
-
+    
 
 tcflush(uart0_filestream, TCIOFLUSH);
     unsigned char msg[7];
-    uint8_t startangle ;
     msg[0]='2';
     msg[1]='0';
     int i;
- int w = path->linesegcords[0].c2.x-path->linesegcords[0].c1.x;
-int h = path->linesegcords[0].c2.y-path->linesegcords[0].c1.y;
-if(w!=0)
-{
-startangle = atan2(h,w)*(180/(2*M_PI));
-}
-else{
-  startangle=90;
-}
-if (startangle>=360){
-startangle=startangle-360;
-}
-startangle+=anglecorrection;
-   if(startangle>0){
+    __int8_t startangle=180+(180/3.14)*(atan2(path->linesegcords[0].c1.y-path->linesegcords[0].c2.y, path->linesegcords[0].c1.x-path->linesegcords[0].c2.x))+anglecorrection;
+    if(startangle>0){
         msg[2]='r';
     }
     else {
@@ -619,28 +603,26 @@ startangle+=anglecorrection;
 if (startangle%3!=0){
 startangle++;
 }
-printf("angle");
-fflush(stdout);
 printf("%i\n", startangle);
 fflush(stdout);
     msg[3]=0;
     msg[4]=0;
     msg[5]='+';
     msg[6]=abs(startangle);
-
+    
     while(1)
      {
          printf("sending");
          fflush(stdout);
          sendOverRS232(msg, uart0_filestream);
          char x;
-
+         
          fflush(stdout);
          int chars=read(uart0_filestream, &x, 1);
          if(chars==0)
          {
              printf("error");
-
+             
              fflush(stdout);
         errorcount++;
       }
@@ -659,16 +641,16 @@ fflush(stdout);
 		 break;
      }
      else if(x!='e'){
-
+		
 		 errorcount++;
 	 }
-
+	 
   if(errorcount>=10){
       return false;
   }
 }
   errorcount=0;
-
+    
 
     for(i=0 ; i<len; i++){
         int dist=(distance(path->linesegcords[i].c1.x, path->linesegcords[i].c2.x, path->linesegcords[i].c1.y, path->linesegcords[i].c2.y))*200;
@@ -684,13 +666,13 @@ fflush(stdout);
          fflush(stdout);
          sendOverRS232(msg, uart0_filestream);
          char x;
-
+         
          fflush(stdout);
          int chars=read(uart0_filestream, &x, 1);
          if(chars==0)
          {
              printf("error");
-
+             
              fflush(stdout);
         errorcount++;
       }
@@ -708,15 +690,15 @@ fflush(stdout);
 		 break;
      }
      else if(x!='e'){
-
+		
 		 errorcount++;
 	 }
-
+	 
   if(errorcount>=10){
       return false;
   }
 }
-
+ 
   errorcount=0;
 if(anglecount<path->numofang){
      if(path->angles[anglecount]>0){
@@ -739,13 +721,13 @@ angle++;
          fflush(stdout);
          sendOverRS232(msg, uart0_filestream);
          char x;
-
+         
          fflush(stdout);
          int chars=read(uart0_filestream, &x, 1);
          if(chars==0)
          {
              printf("error");
-
+             
              fflush(stdout);
         errorcount++;
       }
@@ -763,37 +745,44 @@ angle++;
 		 break;
      }
      else if(x!='e'){
-
+		
 		 errorcount++;
 	 }
-
+	 
   if(errorcount>=10){
       return false;
   }
 }
   errorcount=0;
-
+    
 
 }
     }
 return true;
 }
-int main(void) {
-int xscord;
-int yscord;
-int xecord;
-int yecord;
-int anglecorrection;
-scanf("%i", &xscord);
-scanf("%i", &yscord);
-scanf("%i", &xecord);
-scanf("%i", &yecord);
-scanf("%i",&anglecorrection);
+int main(int argc, char **argv) {
+int xscord, yscord, xecord, yecord, anglecorrection;
 if(geteuid() != 0)
 {
   printf("Ne e root");
   exit(1);
 }
+if (argc<4){
+printf("Nemas argumenti");
+return 0;
+}
+
+if(argc==5){
+anglecorrection=strtol(argv[5], nullptr, 10);
+}
+else{
+anglecorrection=0;
+}
+xscord=(int)strtol(argv[1], nullptr, 10);
+yscord=(int)strtol(argv[2], nullptr, 10);
+xecord=(int)strtol(argv[3], nullptr, 10);
+yecord=(int)strtol(argv[4], nullptr, 10);
+
 	int factor = 20;
 	char filename[]="mapac.pgm";
 	PGMData *slika = calloc(1, sizeof(PGMData));
@@ -820,51 +809,29 @@ if(geteuid() != 0)
 		tmp[i][j]=nslika[i][j];
 	}
 }
-int **tmp1=allocate_dynamic_matrix(nrows, ncols);
-    for(i=0 ; i<nrows ; i++){
-	for(j=0 ; j<ncols ; j++){
-		tmp1[i][j]=nslika[i][j];
-	}
-}
-   FILE *fp=fopen("izlez.raw", "wb");
+   /* FILE *fp=fopen("izlez.raw", "wb");
 	for(i=0 ; i<nrows ; i++){
         for(j=0 ; j<ncols ; j++){
             fputc(tmp[i][j], fp);
         }
 	}
 	fclose(fp);
-
-
+  */
+  
     cords *path=nullptr;
     int len=Astar(nslika, &path,ncols, nrows, xscord, yscord, xecord, yecord);
    // printf("DONE");
-if(len==0){
-printf("Greska vo mapa\n");
-return 0;
-}
    int nlen;
-   for(i=0 ; i<len ; i++){
-	tmp1[path[i].y][path[i].x]=255;
-}
-        
-  
-FILE *Astr = fopen("astarresena.raw", "wb");
-for(i=0 ; i<nrows ; i++){
-        for(j=0 ; j<ncols ; j++){
+   // uchar format za prakanje
 
-            fputc(tmp1[i][j], Astr);
-        }
-	}
-	fclose(Astr);
 cords *npath=(cords*)calloc(len, sizeof(cords));
 for (i=0 ; i <len ; i++){
-npath[i]=path[len-i-1];
-printf("%i, %i", npath[i].x, npath[i].y);
+    npath[i]=path[len-i];
 }
+
 cords *npathh=nullptr;
 nlen=processPath(&npathh, npath, len, tmp);
-printf("pathlen\n");
-printf("%i\n", nlen);
+
 
 
 data *points=pathwithangles(npathh, nlen);
@@ -877,14 +844,14 @@ data *points=pathwithangles(npathh, nlen);
 
 
     for(i=0 ; i<len ; i++){
-
+       
          tmp[npath[i].y][npath[i].x]=255;
 
     }
     for(i=0 ; i<points->numofang ; i++){
         printf("%f, %c", points->angles[i], '_');
     }
-     FILE *fp3=fopen("resena.raw", "wb");
+ /*    FILE *fp3=fopen("resena.raw", "wb");
      FILE *fp4=fopen("koordinati.txt", "w");
      for(i=0 ; i<nlen ; i++){
          fprintf(fp4, "%i, %c", npathh[i].x, ',');
@@ -898,8 +865,8 @@ data *points=pathwithangles(npathh, nlen);
         }
 	}
 	fclose(fp3);
-
-    if(!sendToRobot(points, nlen-1, anglecorrection))
+*/
+    if(!sendToRobot(points, nlen/2, anglecorrection))
     {
         printf("ERROR");
     }
@@ -914,3 +881,4 @@ data *points=pathwithangles(npathh, nlen);
     deallocate_dynamic_matrix(tmp, nrows);
     free(npath);
 }
+

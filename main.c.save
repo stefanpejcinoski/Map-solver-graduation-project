@@ -102,7 +102,7 @@ int Astar(int **map,cords **rpath, int width, int height, int startx, int starty
         heap[curindex].isOpen=false;
         heap[curindex].isClosed=true;
         if(heap[curindex].x==endx && heap[curindex].y==endy){
-            printf("%i, %i\n", heap[curindex].x, heap[curindex].y);
+           // printf("done");
             cords *path = (cords*)calloc(stepcounter, sizeof(cords));
             int ind=curindex, i=0;
             while(heap[ind].parentIndex>-1){
@@ -820,20 +820,14 @@ if(geteuid() != 0)
 		tmp[i][j]=nslika[i][j];
 	}
 }
-int **tmp1=allocate_dynamic_matrix(nrows, ncols);
-    for(i=0 ; i<nrows ; i++){
-	for(j=0 ; j<ncols ; j++){
-		tmp1[i][j]=nslika[i][j];
-	}
-}
-   FILE *fp=fopen("izlez.raw", "wb");
+/*    FILE *fp=fopen("izlez.raw", "wb");
 	for(i=0 ; i<nrows ; i++){
         for(j=0 ; j<ncols ; j++){
             fputc(tmp[i][j], fp);
         }
 	}
 	fclose(fp);
-
+*/  
 
     cords *path=nullptr;
     int len=Astar(nslika, &path,ncols, nrows, xscord, yscord, xecord, yecord);
@@ -843,24 +837,13 @@ printf("Greska vo mapa\n");
 return 0;
 }
    int nlen;
-   for(i=0 ; i<len ; i++){
-	tmp1[path[i].y][path[i].x]=255;
-}
-        
-  
-FILE *Astr = fopen("astarresena.raw", "wb");
-for(i=0 ; i<nrows ; i++){
-        for(j=0 ; j<ncols ; j++){
+   // uchar format za prakanje
 
-            fputc(tmp1[i][j], Astr);
-        }
-	}
-	fclose(Astr);
 cords *npath=(cords*)calloc(len, sizeof(cords));
 for (i=0 ; i <len ; i++){
-npath[i]=path[len-i-1];
-printf("%i, %i", npath[i].x, npath[i].y);
+    npath[i]=path[len-i];
 }
+
 cords *npathh=nullptr;
 nlen=processPath(&npathh, npath, len, tmp);
 printf("pathlen\n");
