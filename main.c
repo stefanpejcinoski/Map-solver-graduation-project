@@ -33,8 +33,8 @@ typedef struct Node{
 } Node;
 
 typedef struct cordpairs{
-    cords c1;
-    cords c2;
+    cords *c1;
+    cords *c2;
 }cpairs;
 typedef struct data{
     float *angles;
@@ -397,10 +397,10 @@ retdata->linesegcords=(cpairs*)calloc(len-1, sizeof(cpairs)+4);
 
 int i;
 if (len<3){
-   retdata->linesegcords->c1.x=path[0].x;
-   retdata->linesegcords->c1.y=path[0].y;
-   retdata->linesegcords->c2.x=path[1].x;
-   retdata->linesegcords->c2.y=path[1].y;
+   retdata->linesegcords->c1->x=path[0].x;
+   retdata->linesegcords->c1->y=path[0].y;
+   retdata->linesegcords->c2->x=path[1].x;
+   retdata->linesegcords->c2->y=path[1].y;
    retdata->angles=nullptr;
     return retdata;
 }
@@ -411,10 +411,10 @@ retdata->numofang=len-2;
 retdata->angles=(float*)calloc(len-1, sizeof(float));
 for (i=0 ; i<len ; i++){
 
-retdata->linesegcords[i].c1.x=path[i].x;
-retdata->linesegcords[i].c1.y=path[i].y;
-retdata->linesegcords[i].c2.x=path[i+1].x;
-retdata->linesegcords[i].c2.y=path[i+1].y;
+retdata->linesegcords[i].c1->x=path[i].x;
+retdata->linesegcords[i].c1->y=path[i].y;
+retdata->linesegcords[i].c2->x=path[i+1].x;
+retdata->linesegcords[i].c2->y=path[i+1].y;
 //printf("%i, %c, %i", path[i].x, '-', path[i].y);
 
 }
@@ -548,6 +548,111 @@ void sendOverRS232(unsigned char *message, int port)
    }
 
 }
+cpairs *recieve(){
+int uart0_filestream=-1;
+uart0_filestream = open("/dev/serial0", O_RDWR | O_NOCTTY);		//Open in non blocking read/write mode
+	if (uart0_filestream == -1)
+	{
+
+		printf("Error - Unable to open UART");
+        exit(-1);
+	}
+    struct termios options;
+    if(!isatty(uart0_filestream)) {
+    printf("bad port");
+    exit(-1);
+    }
+	if(tcgetattr(uart0_filestream, &options)<0){
+        printf("bad port config");
+        exit(-1);
+    }
+
+	options.c_iflag &= ~(IGNBRK | BRKINT | ICRNL |
+                    INLCR | PARMRK | INPCK | ISTRIP | IXON);
+    options.c_oflag = 0;
+    options.c_lflag &= ~(ECHO | ECHONL | ICANON | IEXTEN | ISIG);
+    options.c_cflag &= ~(CSIZE | PARENB);
+    options.c_cflag |= CS8;
+    options.c_cc[VMIN]  = 1;
+    options.c_cc[VTIME] = 0;
+    if(cfsetispeed(&options, B9600) < 0 || cfsetospeed(&options, B9600) < 0) {
+    printf("failed to set speed");
+    exit(-1);
+}
+	if(tcsetattr(uart0_filestream, TCSAFLUSH, &options) < 0) {
+    printf("failed to set config");
+    exit(-1);
+    }
+   // if (ioctl(uart0_filestream, O_EXCL, NULL) < 0) {
+   // printf("failed to gain exclusive access");
+   // return false;
+
+
+tcflush(uart0_filestream, TCIOFLUSH);
+int xs=0, ys=0, xe=0, ye=0;
+char x;
+int chars=read(uart0_filestream, &x, 1);
+if(chars==0)
+{
+perror("Bad recieve");
+}
+xs+=(x<<8);
+chars=0;
+chars=read(uart0_filestream, &x, 1);
+if(chars==0)
+{
+perror("Bad recieve");
+}
+xs+=(x);
+chars=read(uart0_filestream, &x, 1);
+if(chars==0)
+{
+perror("Bad recieve");
+}
+xe+=(x<<8);
+chars=0;
+chars=read(uart0_filestream, &x, 1);
+if(chars==0)
+{
+perror("Bad recieve");
+}
+xe+=(x);
+chars=read(uart0_filestream, &x, 1);
+if(chars==0)
+{
+perror("Bad recieve");
+}
+ys+=(x<<8);
+chars=0;
+chars=read(uart0_filestream, &x, 1);
+if(chars==0)
+{
+perror("Bad recieve");
+}
+ys+=(x);
+chars=read(uart0_filestream, &x, 1);
+if(chars==0)
+{
+perror("Bad recieve");
+}
+ye+=(x<<8);
+chars=0;
+chars=read(uart0_filestream, &x, 1);
+if(chars==0)
+{
+perror("Bad recieve");
+}
+ye+=(x);
+
+cpairs *p = (cpairs *)malloc(sizeof(cpairs));
+p->c1=(cords*)calloc(1, sizeof(cords));
+p->c2=(cords*)calloc(1, sizeof(cords));
+p->c1->x=xs;
+p->c1->y=ys;
+p->c2->x=xe;
+p->c2->y=ye;
+return p;
+}
 bool sendToRobot(data *path, int len, int anglecorrection){
 int uart0_filestream = -1;
 int errorcount;
@@ -597,8 +702,8 @@ tcflush(uart0_filestream, TCIOFLUSH);
     msg[0]='2';
     msg[1]='0';
     int i;
- int w = path->linesegcords[0].c2.x-path->linesegcords[0].c1.x;
-int h = path->linesegcords[0].c2.y-path->linesegcords[0].c1.y;
+ int w = path->linesegcords[0].c2->x-path->linesegcords[0].c1->x;
+int h = path->linesegcords[0].c2->y-path->linesegcords[0].c1->y;
 if(w!=0)
 {
 startangle = atan2(h,w)*(180/(2*M_PI));
@@ -671,7 +776,7 @@ fflush(stdout);
 
 
     for(i=0 ; i<len; i++){
-        int dist=(distance(path->linesegcords[i].c1.x, path->linesegcords[i].c2.x, path->linesegcords[i].c1.y, path->linesegcords[i].c2.y))*200;
+        int dist=(distance(path->linesegcords[i].c1->x, path->linesegcords[i].c2->x, path->linesegcords[i].c1->y, path->linesegcords[i].c2->y))*200;
         msg[2]='f';
         msg[3]=(dist>>8)&0xff;
         msg[4]=(dist)&0xff;
